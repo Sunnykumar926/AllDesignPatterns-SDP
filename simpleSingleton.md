@@ -1,8 +1,8 @@
 # Issue in this approach:
 
 ### 1. Not Thread Safe 
-- Imagine two threads call `getInstance` at the same time then both execute at same time and create scenario like 
-    **- Thread A checks → instance is null ✅*
+- Imagine two threads call `getInstance` at the same time then both execute at same time and create scenario like\n 
+    **- Thread A checks → instance is null ✅**
     **- Thread B checks → instance is null ✅**
     - Then thread A creates object and thread B also creates another object.
 - Now we have two objects which completely breaks the singleton guarantee.
