@@ -7,7 +7,9 @@
 - No race condition during access
 
 👉 It is thread-safe in normal cases
+
 👉 It is simpler than double-checked locking
+
 👉 No instruction reordering issue during `getInstance()`
 
 ### But it still has problem 
