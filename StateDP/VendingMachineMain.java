@@ -6,6 +6,7 @@ interface VendingState{
     VendingState dispense(VendingMachine machine);
     VendingState returnCoin(VendingMachine machine);
     VendingState refill(VendingMachine machine , int quantity);
+    String getStateName();
 }
 
 class VendingMachine{
@@ -27,6 +28,7 @@ class VendingMachine{
         noCoinState= new NoCoinState();
         hasCoinState = new HasCoinState();
         dispenseState = new DispenseState();
+        soldOutState = new SoldOutState();
         // HasCoinState hasCoinState = new HasCoinState();
 
         if(totalItem > 0){
@@ -42,9 +44,35 @@ class VendingMachine{
     public VendingState getDispenseState(){
         return dispenseState;
     }
+    public VendingState getSoldOutState(){
+        return soldOutState;
+    }
+
+    public void selectItem() {
+        currentState = currentState.selectItem(this);
+    }
 
     public void insert(int coin){
         currentState = currentState.insertCoin(this, coin);
+    }
+
+    public void dispense() {
+        currentState = currentState.dispense(this);
+    }
+    
+    public void returnCoin() {
+        currentState = currentState.returnCoin(this);
+    }
+    
+    public void refill(int quantity) {
+        currentState = currentState.refill(this, quantity);
+    }
+
+    public void printStatus() {
+        System.out.println("\n--- Vending Machine Status ---");
+        System.out.println("Items remaining: " + totalItem);
+        System.out.println("Inserted coin: Rs " + insertedCoin);
+        System.out.println("Current state: " + currentState.getStateName() + "\n");
     }
 
     public void setInsertedCoin(int coin){
@@ -64,6 +92,12 @@ class VendingMachine{
 
     public int getPrice(){
         return itemPrice;
+    }
+    public int getTotalItem(){
+        return totalItem;
+    }
+    public void decrementTotalItem(){
+        totalItem -= 1;
     }
 
 }
@@ -137,11 +171,109 @@ class HasCoinState implements VendingState{
 }
 
 class DispenseState implements VendingState{
-    // pass
+    public VendingState insertCoin(VendingMachine machine, int coin){
+        System.out.println("Please wait, already dispensing item. Coin returned: Rs "+ coin);
+        return machine.getDispenseState();
+    }
+    public VendingState selectItem(VendingMachine machine){
+        System.out.println("Already dispensing item. Please wait.");
+        return machine.getDispenseState();
+    }
+    public VendingState dispense(VendingMachine machine){
+        System.out.println("Item Dispensed");
+        machine.decrementTotalItem();
+        if(machine.getTotalItem()>0){
+            return machine.getNoCoinState();
+        }
+        else {
+            System.out.println("All product sold out!");
+            return machine.getSoldOutState();
+        }
+    }
+    public VendingState returnCoin(VendingMachine machine){
+        System.out.println("Cann't return coin while dispensing item!");
+        return machine.getDispenseState();
+    }
+
+    public VendingState refill(VendingMachine machine, int quantity){
+        System.out.println("Can't refill in this state");
+        return machine.getDispenseState();
+    }
+    public String getStateName(){
+        return "DISPENSING";
+    }
+}
+
+class SoldOutState implements VendingState{
+    public VendingState insertCoin(VendingMachine machine, int coin){
+        System.out.println("Product is sold out. coin returned Rs: "+coin);
+        return machine.getSoldOutState();
+    }
+    public VendingState selectItem(VendingMachine machine){
+        System.out.println("Product sold out");
+        return machine.getSoldOutState();
+    }
+    public VendingState dispense(VendingMachine machine){
+        System.out.println("Product is sold out");
+        return machine.getSoldOutState();
+    }
+    public VendingState returnCoin(VendingMachine machine){
+        System.out.println("No coin was inserted");
+        return machine.getSoldOutState();
+    }
+    public VendingState refill(VendingMachine machine, int quantity){
+        System.out.println("Items refilling");
+        machine.incrementItemCount(quantity);
+        return machine.getNoCoinState();
+    }
+
+    public String getStateName(){
+        return "SOLD_OUT";
+    }
+
 }
 
 public class VendingMachineMain{
     public static void main(String[] args) {
         VendingMachine machine = new VendingMachine(2, 20);
+        machine.printStatus();
+
+        System.out.println("1. Trying to select item without coin:");
+        machine.selectItem();
+        machine.printStatus();
+
+        System.out.println("2. Inserting coin:");
+        machine.insert(10);  // State changes to HAS_COIN
+        machine.printStatus();
+
+        System.out.println("3. Selecting item with insufficient funds:");
+        machine.selectItem();  // Insufficient funds, stays in HAS_COIN
+        machine.printStatus();
+        
+        System.out.println("4. Adding more coins:");
+        machine.insert(10);  // Add more money, stays in HAS_COIN
+        machine.printStatus();
+        
+        System.out.println("5. Selecting item Now");
+        machine.selectItem();  // State changes to SOLD
+        machine.printStatus();
+        
+        System.out.println("6. Dispensing item:");
+        machine.dispense(); // State changes to NO_COIN (items remaining)
+        machine.printStatus();
+        
+        System.out.println("7. Buying last item:");
+        machine.insert(20);  // State changes to HAS_COIN
+        machine.selectItem();  // State changes to SOLD
+        machine.dispense(); // State changes to SOLD_OUT (no items left)
+        machine.printStatus();
+
+        System.out.println("8. Trying to use sold out machine:");
+        machine.insert(5);  // Coin returned, stays in SOLD_OUT
+
+        System.out.println("9. Trying to use sold out machine:");
+        machine.refill(2);
+        machine.printStatus(); // State changes NO_COIN
+        
     }
 }
